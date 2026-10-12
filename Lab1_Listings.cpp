@@ -3,6 +3,7 @@
 #include <list>
 #include <algorithm>
 #include <chrono>
+#include <mutex>
 
 using namespace std;
 
@@ -85,6 +86,54 @@ void Task123() {
     t2.join();
 }
 
+ // Завдання 1.2.4
+ // Синхронізований доступ до списку
+
+list<int> l124;
+mutex m124;
+
+void AddToList124(int startValue) {
+    for (int i = 0; i < 10; i++) {
+        int value = startValue + i;
+
+        m124.lock();
+        l124.push_back(value);
+        cout << "AddToList: added " << value << endl;
+        m124.unlock();
+
+        this_thread::sleep_for(chrono::milliseconds(20));
+    }
+}
+
+void ListContains124(int searchValue) {
+    for (int i = 0; i < 10; i++) {
+        m124.lock();
+
+        bool found =
+            find(l124.begin(), l124.end(), searchValue)
+            != l124.end();
+
+        cout << "ListContains: attempt " << i + 1
+             << ", value " << searchValue
+             << (found ? " FOUND" : " NOT FOUND")
+             << endl;
+
+        m124.unlock();
+
+        this_thread::sleep_for(chrono::milliseconds(25));
+    }
+}
+
+void Task124() {
+    l124.clear();
+
+    thread t1(AddToList124, 1);
+    thread t2(ListContains124, 5);
+
+    t1.join();
+    t2.join();
+}
+
 // =====================================
 // Головна функція
 // =====================================
@@ -103,6 +152,10 @@ int main() {
 
     case 123:
         Task123();
+        break;
+
+    case 124:
+        Task124();
         break;
 
     default:
