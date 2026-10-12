@@ -134,6 +134,66 @@ void Task124() {
     t2.join();
 }
 
+ // Завдання 1.2.5
+ // Використання std::lock_guard
+
+list<int> l125;
+mutex m125;
+int checksCompleted125 = 0;
+
+void AddToList125(int value) {
+    lock_guard<mutex> lock(m125);
+
+    l125.push_back(value);
+
+    cout << "AddToList: added "
+         << value << endl;
+}
+
+void ListContains125(int searchValue, int attempt) {
+    lock_guard<mutex> lock(m125);
+
+    bool found =
+        find(l125.begin(), l125.end(), searchValue)
+        != l125.end();
+
+    cout << "ListContains: attempt " << attempt
+         << ", value " << searchValue
+         << (found ? " FOUND" : " NOT FOUND")
+         << endl;
+
+    ++checksCompleted125;
+}
+
+void Task125() {
+    l125.clear();
+    checksCompleted125 = 0;
+
+    for (int i = 0; i < 10; i++) {
+        thread t1(AddToList125, i + 1);
+        t1.detach();
+
+        thread t2(ListContains125, 5, i + 1);
+        t2.detach();
+    }
+
+    while (true) {
+        bool finished;
+
+        {
+            lock_guard<mutex> lock(m125);
+            finished = (l125.size() == 10 &&
+                        checksCompleted125 == 10);
+        }
+
+        if (finished)
+            break;
+
+        this_thread::sleep_for(
+            chrono::milliseconds(10));
+    }
+}
+
 // =====================================
 // Головна функція
 // =====================================
@@ -156,6 +216,10 @@ int main() {
 
     case 124:
         Task124();
+        break;
+        
+    case 125:
+        Task125();
         break;
 
     default:
