@@ -199,7 +199,7 @@ void Task125() {
 // =====================================
 
 int main() {
-    int task = 123;
+    int task = 125;
 
     switch (task) {
     case 121:
