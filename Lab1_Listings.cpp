@@ -264,6 +264,36 @@ public:
         Print("Person 1:", first.data);
         Print("Person 2:", second.data);
     }
+
+    // Завдання 1.2.7
+    // Обмін із використанням unique_lock
+
+    static void SwapUnique(exchangePerson& first,
+                           exchangePerson& second) {
+        if (&first == &second) {
+            cout << "Cannot swap the same object!"
+                 << endl;
+            return;
+        }
+
+        unique_lock<mutex> lock1(first.m, defer_lock);
+        unique_lock<mutex> lock2(second.m, defer_lock);
+
+        std::lock(lock1, lock2);
+
+        cout << "BEFORE SWAP:" << endl;
+
+        Print("Person 1:", first.data);
+        Print("Person 2:", second.data);
+
+        swap(first.data, second.data);
+
+        cout << "AFTER SWAP:" << endl;
+
+        Print("Person 1:", first.data);
+        Print("Person 2:", second.data);
+    }
+
 };
 
 void Task126() {
@@ -294,6 +324,36 @@ void Task126() {
 
     t3.join();
 }
+
+void Task127() {
+    exchangePerson person1;
+    exchangePerson person2;
+
+    atomic<int> completed{0};
+
+    thread t1([&]() {
+        exchangePerson::JohnDoe(person1);
+        ++completed;
+    });
+    t1.detach();
+
+    thread t2([&]() {
+        exchangePerson::JacobSmith(person2);
+        ++completed;
+    });
+    t2.detach();
+
+    while (completed.load() < 2) {
+        this_thread::sleep_for(
+            chrono::milliseconds(1));
+    }
+
+    thread t3(exchangePerson::SwapUnique,
+              ref(person1), ref(person2));
+
+    t3.join();
+}
+
 
 // =====================================
 // Головна функція
@@ -326,6 +386,11 @@ int main() {
     case 126:
         Task126();
         break;
+        
+    case 127:
+        Task127();
+        break;
+
     default:
         cout << "Unknown task" << endl;
     }
