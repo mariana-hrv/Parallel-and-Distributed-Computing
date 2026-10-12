@@ -4,7 +4,10 @@
 #include <algorithm>
 #include <chrono>
 #include <mutex>
-
+#include <string>
+#include <atomic>
+#include <functional>
+#include <utility>
 using namespace std;
 
 // =====================================
@@ -194,6 +197,104 @@ void Task125() {
     }
 }
 
+ // Завдання 1.2.6
+ // Обмін даними із захистом від deadlock
+
+class someData {
+public:
+    string name;
+    string surname;
+    string address;
+    int age = 0;
+};
+
+class exchangePerson {
+private:
+    someData data;
+    mutex m;
+
+    static void Print(const string& title,
+                      const someData& person) {
+        cout << title << endl;
+        cout << "Name: " << person.name << endl;
+        cout << "Surname: " << person.surname << endl;
+        cout << "Address: " << person.address << endl;
+        cout << "Age: " << person.age << endl << endl;
+    }
+
+public:
+    static void JohnDoe(exchangePerson& person) {
+        lock_guard<mutex> lock(person.m);
+
+        person.data.name = "John";
+        person.data.surname = "Doe";
+        person.data.address = "Unknown";
+        person.data.age = 120;
+    }
+
+    static void JacobSmith(exchangePerson& person) {
+        lock_guard<mutex> lock(person.m);
+
+        person.data.name = "Jacob";
+        person.data.surname = "Smith";
+        person.data.address = "Known";
+        person.data.age = 1;
+    }
+
+    static void Swap(exchangePerson& first,
+                     exchangePerson& second) {
+        if (&first == &second) {
+            cout << "Cannot swap the same object!"
+                 << endl;
+            return;
+        }
+
+        std::lock(first.m, second.m);
+
+        lock_guard<mutex> lock1(first.m, adopt_lock);
+        lock_guard<mutex> lock2(second.m, adopt_lock);
+
+        cout << "BEFORE SWAP:" << endl;
+        Print("Person 1:", first.data);
+        Print("Person 2:", second.data);
+
+        swap(first.data, second.data);
+
+        cout << "AFTER SWAP:" << endl;
+        Print("Person 1:", first.data);
+        Print("Person 2:", second.data);
+    }
+};
+
+void Task126() {
+    exchangePerson person1;
+    exchangePerson person2;
+
+    atomic<int> completed{0};
+
+    thread t1([&]() {
+        exchangePerson::JohnDoe(person1);
+        ++completed;
+    });
+    t1.detach();
+
+    thread t2([&]() {
+        exchangePerson::JacobSmith(person2);
+        ++completed;
+    });
+    t2.detach();
+
+    while (completed.load() < 2) {
+        this_thread::sleep_for(
+            chrono::milliseconds(1));
+    }
+
+    thread t3(exchangePerson::Swap,
+              ref(person1), ref(person2));
+
+    t3.join();
+}
+
 // =====================================
 // Головна функція
 // =====================================
@@ -221,7 +322,10 @@ int main() {
     case 125:
         Task125();
         break;
-
+        
+    case 126:
+        Task126();
+        break;
     default:
         cout << "Unknown task" << endl;
     }
