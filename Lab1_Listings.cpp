@@ -361,10 +361,15 @@ void Task127() {
 
 int main() {
    
-    int task;
+    
+int task = 0;
 
-    cout << "Select task (121-127): ";
-    cin >> task;
+cout << "Select task (121-127): ";
+
+if (!(cin >> task)) {
+    cout << "Invalid input!" << endl;
+    return 1;
+}
 
     switch (task) {
     case 121:
