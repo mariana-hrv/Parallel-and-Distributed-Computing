@@ -360,7 +360,11 @@ void Task127() {
 // =====================================
 
 int main() {
-    int task = 125;
+   
+    int task;
+
+    cout << "Select task (121-127): ";
+    cin >> task;
 
     switch (task) {
     case 121:
